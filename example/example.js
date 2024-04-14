@@ -1,10 +1,9 @@
 /* eslint-disable no-console */
-import fs from 'fs';
-// FIXME: Incase you have the npm package
-// import HTMLtoDOCX from 'html-to-docx';
-import HTMLtoDOCX from '../dist/html-to-docx.esm';
+const fs = require('fs');
 
-const filePath = './example.docx';
+const HTMLtoDOCX = require('../dist/html-to-docx-lite.umd');
+
+const filePath = 'example/example.docx';
 
 const htmlString = `<!DOCTYPE html>
 <html lang="en">

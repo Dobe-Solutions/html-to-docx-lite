@@ -1,7 +1,10 @@
-html-to-docx
-============
+# html-to-docx-lite
 
 [![NPM Version][npm-image]][npm-url]
+
+This is a fork of [html-to-docx]. Goal is to reduce the artifact size, replace older/unmaintained libraries and make it more client friendly (e.g. removing polyfills). Contributions are welcome.
+
+Original [html-to-docx-readme] still applies.
 
 html-to-docx is a js library for converting HTML documents to DOCX format supported by Microsoft Word 2007+, LibreOffice Writer, Google Docs, WPS Writer etc.
 
@@ -20,16 +23,16 @@ Currently it doesn't work with browser directly, but it was tested against React
 Use the npm to install foobar.
 
 ```bash
-npm install html-to-docx
+npm install html-to-docx-lite
 ```
 
 ## Usage
 
 ```js
-await HTMLtoDOCX(htmlString, headerHTMLString, documentOptions, footerHTMLString)
+await HTMLtoDOCX(htmlString, headerHTMLString, documentOptions, footerHTMLString);
 ```
 
-full fledged examples can be found under `example/`
+An example can be found under `example/`.
 
 ### Parameters
 
@@ -88,15 +91,17 @@ full fledged examples can be found under `example/`
 
 Currently page break can be implemented by having div with classname "page-break" or style "page-break-after" despite the values of the "page-break-after", and contents inside the div element will be ignored. `<div class="page-break" style="page-break-after: always;"></div>`
 
-
 CSS list-style-type for `<ol>` element are now supported. Just do something like this in the HTML:
+
 ```
   <ol style="list-style-type:lower-alpha;">
     <li>List item</li>
     ...
   </ol>
 ```
+
 List of supported list-style-types:
+
 - upper-alpha, will result in `A. List item`
 - lower-alpha, will result in `a. List item`
 - upper-roman, will result in `I. List item`
@@ -110,7 +115,6 @@ Also you could add attribute `data-start="n"` to start the numbering from the n-
 
 `<ol data-start="2">` will start the numbering from ( B. b. II. ii. 2. )
 
-
 Font family doesnt work consistently for all word processor softwares
 
 - Word Desktop work as intended
@@ -123,38 +127,28 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 
 Please make sure to branch new branches off of develop for contribution.
 
-## Support
-
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/privateOmega)
-
 ## License
 
 MIT
 
 [npm-image]: https://img.shields.io/npm/v/html-to-docx.svg
-[npm-url]: https://npmjs.org/package/html-to-docx
-[html-docx-js]: https://github.com/evidenceprime/html-docx-js "html-docx-js"
-[altchunks]: https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.altchunk?view=openxml-2.8.1 "altchunks"
-[libtidy]: https://github.com/jure/node-libtidy "libtidy"
-[String]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#String_type "String"
-[Object]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object "Object"
-[Number]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#Number_type "Number"
-[TWIP]: https://en.wikipedia.org/wiki/Twip "TWIP"
-[Array]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array "Array"
-[Date]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date "Date"
-[Boolean]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#Boolean_type "Boolean"
-[Promise]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise "Promise"
-[Buffer]: https://nodejs.org/api/buffer.html#buffer_buffer "Buffer"
-[Blob]: https://developer.mozilla.org/en-US/docs/Web/API/Blob "Blob"
-[pixel]: https://en.wikipedia.org/wiki/Pixel#:~:text=Pixels%2C%20abbreviated%20as%20%22px%22,what%20screen%20resolution%20views%20it. "pixel"
-[cm]: https://en.wikipedia.org/wiki/Centimetre "cm"
-[inch]: https://en.wikipedia.org/wiki/Inch "inch"
-[pt]: https://en.wikipedia.org/wiki/Point_(typography) "pt"
-
-## Contributors
-
-<a href="https://github.com/privateomega/html-to-docx/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=privateomega/html-to-docx" />
-</a>
-
-Made with [contrib.rocks](https://contrib.rocks).
+[npm-url]: https://npmjs.org/package/html-to-docx-lite
+[html-to-docx]: https://github.com/privateOmega/html-to-docx
+[html-to-docx-readme]: https://github.com/privateOmega/html-to-docx/blob/master/README.md
+[html-docx-js]: https://github.com/evidenceprime/html-docx-js
+[altchunks]: https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.wordprocessing.altchunk?view=openxml-2.8.1 'altchunks'
+[libtidy]: https://github.com/jure/node-libtidy 'libtidy'
+[String]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#String_type 'String'
+[Object]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object 'Object'
+[Number]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#Number_type 'Number'
+[TWIP]: https://en.wikipedia.org/wiki/Twip 'TWIP'
+[Array]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array 'Array'
+[Date]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date 'Date'
+[Boolean]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Data_structures#Boolean_type 'Boolean'
+[Promise]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise 'Promise'
+[Buffer]: https://nodejs.org/api/buffer.html#buffer_buffer 'Buffer'
+[Blob]: https://developer.mozilla.org/en-US/docs/Web/API/Blob 'Blob'
+[pixel]: https://en.wikipedia.org/wiki/Pixel#:~:text=Pixels%2C%20abbreviated%20as%20%22px%22,what%20screen%20resolution%20views%20it. 'pixel'
+[cm]: https://en.wikipedia.org/wiki/Centimetre 'cm'
+[inch]: https://en.wikipedia.org/wiki/Inch 'inch'
+[pt]: https://en.wikipedia.org/wiki/Point_(typography) 'pt'

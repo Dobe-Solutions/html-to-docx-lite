@@ -1,46 +1,37 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-case-declarations */
 import { fragment } from 'xmlbuilder2';
-import VNode from 'virtual-dom/vnode/vnode';
-import VText from 'virtual-dom/vnode/vtext';
-import isVNode from 'virtual-dom/vnode/is-vnode';
-import isVText from 'virtual-dom/vnode/is-vtext';
-// eslint-disable-next-line import/no-named-default
-import { default as HTMLToVDOM } from 'html-to-vdom';
-import sizeOf from 'image-size';
-import imageToBase64 from 'image-to-base64';
+import * as htmlparser2 from 'htmlparser2';
 import mimeTypes from 'mime-types';
+import sizeOf from 'image-size';
+import parse from 'style-to-js';
 
 // FIXME: remove the cyclic dependency
 // eslint-disable-next-line import/no-cycle
 import * as xmlBuilder from './xml-builder';
 import namespaces from '../namespaces';
 import { imageType, internalRelationship } from '../constants';
-import { vNodeHasChildren } from '../utils/vnode';
 import { isValidUrl } from '../utils/url';
-
-const convertHTML = HTMLToVDOM({
-  VNode,
-  VText,
-});
+import { decode, encodeFromURL } from '../utils/base64Convert';
 
 // eslint-disable-next-line consistent-return, no-shadow
 export const buildImage = async (docxDocumentInstance, vNode, maximumWidth = null) => {
   let response = null;
   let base64Uri = null;
+
   try {
-    const imageSource = vNode.properties.src;
+    const imageSource = vNode.attribs.src;
     if (isValidUrl(imageSource)) {
-      const base64String = await imageToBase64(imageSource).catch((error) => {
+      const base64String = await encodeFromURL(imageSource).catch((error) => {
         // eslint-disable-next-line no-console
-        console.warning(`skipping image download and conversion due to ${error}`);
+        console.warn(`skipping image download and conversion due to ${error}`);
       });
 
       if (base64String) {
         base64Uri = `data:${mimeTypes.lookup(imageSource)};base64, ${base64String}`;
       }
     } else {
-      base64Uri = decodeURIComponent(vNode.properties.src);
+      base64Uri = decodeURIComponent(vNode.attribs.src);
     }
     if (base64Uri) {
       response = docxDocumentInstance.createMediaFile(base64Uri);
@@ -52,8 +43,9 @@ export const buildImage = async (docxDocumentInstance, vNode, maximumWidth = nul
     docxDocumentInstance.zip
       .folder('word')
       .folder('media')
-      .file(response.fileNameWithExtension, Buffer.from(response.fileContent, 'base64'), {
+      .file(response.fileNameWithExtension, response.fileContent, {
         createFolders: false,
+        base64: true,
       });
 
     const documentRelsId = docxDocumentInstance.createDocumentRelationships(
@@ -63,8 +55,7 @@ export const buildImage = async (docxDocumentInstance, vNode, maximumWidth = nul
       internalRelationship
     );
 
-    const imageBuffer = Buffer.from(response.fileContent, 'base64');
-    const imageProperties = sizeOf(imageBuffer);
+    const imageProperties = sizeOf(decode(response.fileContent));
 
     const imageFragment = await xmlBuilder.buildParagraph(
       vNode,
@@ -73,7 +64,7 @@ export const buildImage = async (docxDocumentInstance, vNode, maximumWidth = nul
         inlineOrAnchored: true,
         relationshipId: documentRelsId,
         ...response,
-        description: vNode.properties.alt,
+        description: vNode.attribs.alt,
         maximumWidth: maximumWidth || docxDocumentInstance.availableDocumentSpace,
         originalWidth: imageProperties.width,
         originalHeight: imageProperties.height,
@@ -92,16 +83,16 @@ export const buildList = async (vNode, docxDocumentInstance, xmlFragment) => {
     {
       node: vNode,
       level: 0,
-      type: vNode.tagName,
-      numberingId: docxDocumentInstance.createNumbering(vNode.tagName, vNode.properties),
+      type: vNode.name,
+      numberingId: docxDocumentInstance.createNumbering(vNode.name, vNode.attribs),
     },
   ];
   while (vNodeObjects.length) {
     const tempVNodeObject = vNodeObjects.shift();
 
     if (
-      isVText(tempVNodeObject.node) ||
-      (isVNode(tempVNodeObject.node) && !['ul', 'ol', 'li'].includes(tempVNodeObject.node.tagName))
+      tempVNodeObject.node.type === 'text' ||
+      !['ul', 'ol', 'li'].includes(tempVNodeObject.node.name)
     ) {
       const paragraphFragment = await xmlBuilder.buildParagraph(
         tempVNodeObject.node,
@@ -117,56 +108,50 @@ export const buildList = async (vNode, docxDocumentInstance, xmlFragment) => {
     if (
       tempVNodeObject.node.children &&
       tempVNodeObject.node.children.length &&
-      ['ul', 'ol', 'li'].includes(tempVNodeObject.node.tagName)
+      ['ul', 'ol', 'li'].includes(tempVNodeObject.node.name)
     ) {
       const tempVNodeObjects = tempVNodeObject.node.children.reduce((accumulator, childVNode) => {
-        if (['ul', 'ol'].includes(childVNode.tagName)) {
+        if (['ul', 'ol'].includes(childVNode.name)) {
           accumulator.push({
             node: childVNode,
             level: tempVNodeObject.level + 1,
-            type: childVNode.tagName,
-            numberingId: docxDocumentInstance.createNumbering(
-              childVNode.tagName,
-              childVNode.properties
-            ),
+            type: childVNode.name,
+            numberingId: docxDocumentInstance.createNumbering(childVNode.name, childVNode.attribs),
           });
         } else {
           // eslint-disable-next-line no-lonely-if
           if (
             accumulator.length > 0 &&
-            isVNode(accumulator[accumulator.length - 1].node) &&
-            accumulator[accumulator.length - 1].node.tagName.toLowerCase() === 'p'
+            accumulator[accumulator.length - 1].node.name.toLowerCase() === 'p'
           ) {
             accumulator[accumulator.length - 1].node.children.push(childVNode);
           } else {
-            const paragraphVNode = new VNode(
-              'p',
-              null,
-              // eslint-disable-next-line no-nested-ternary
-              isVText(childVNode)
-                ? [childVNode]
-                : // eslint-disable-next-line no-nested-ternary
-                isVNode(childVNode)
-                ? childVNode.tagName.toLowerCase() === 'li'
+            const paragraphVNode = {
+              name: 'p',
+              type: 'tag',
+              children:
+                // eslint-disable-next-line no-nested-ternary
+                childVNode.type === 'text'
+                  ? [childVNode]
+                  : childVNode.name.toLowerCase() === 'li'
                   ? [...childVNode.children]
-                  : [childVNode]
-                : []
-            );
-            accumulator.push({
-              // eslint-disable-next-line prettier/prettier, no-nested-ternary
-              node: isVNode(childVNode)
-                ? // eslint-disable-next-line prettier/prettier, no-nested-ternary
-                  childVNode.tagName.toLowerCase() === 'li'
-                  ? childVNode
-                  : childVNode.tagName.toLowerCase() !== 'p'
-                  ? paragraphVNode
-                  : childVNode
-                : // eslint-disable-next-line prettier/prettier
-                  paragraphVNode,
-              level: tempVNodeObject.level,
-              type: tempVNodeObject.type,
-              numberingId: tempVNodeObject.numberingId,
-            });
+                  : [childVNode],
+            };
+            if (childVNode && childVNode.name && childVNode.name.toLowerCase() !== 'p') {
+              accumulator.push({
+                node: childVNode,
+                level: tempVNodeObject.level,
+                type: tempVNodeObject.type,
+                numberingId: tempVNodeObject.numberingId,
+              });
+            } else {
+              accumulator.push({
+                node: paragraphVNode,
+                level: tempVNodeObject.level,
+                type: tempVNodeObject.type,
+                numberingId: tempVNodeObject.numberingId,
+              });
+            }
           }
         }
 
@@ -181,9 +166,10 @@ export const buildList = async (vNode, docxDocumentInstance, xmlFragment) => {
 
 async function findXMLEquivalent(docxDocumentInstance, vNode, xmlFragment) {
   if (
-    vNode.tagName === 'div' &&
-    (vNode.properties.attributes.class === 'page-break' ||
-      (vNode.properties.style && vNode.properties.style['page-break-after']))
+    vNode.name === 'div' &&
+    vNode.attribs &&
+    (vNode.attribs.class === 'page-break' ||
+      (vNode.attribs.style && parse(vNode.attribs.style).pageBreakAfter))
   ) {
     const paragraphFragment = fragment({ namespaceAlias: { w: namespaces.w } })
       .ele('@w', 'p')
@@ -198,7 +184,7 @@ async function findXMLEquivalent(docxDocumentInstance, vNode, xmlFragment) {
     return;
   }
 
-  switch (vNode.tagName) {
+  switch (vNode.name) {
     case 'h1':
     case 'h2':
     case 'h3':
@@ -208,7 +194,7 @@ async function findXMLEquivalent(docxDocumentInstance, vNode, xmlFragment) {
       const headingFragment = await xmlBuilder.buildParagraph(
         vNode,
         {
-          paragraphStyle: `Heading${vNode.tagName[1]}`,
+          paragraphStyle: `Heading${vNode.name[1]}`,
         },
         docxDocumentInstance
       );
@@ -236,11 +222,11 @@ async function findXMLEquivalent(docxDocumentInstance, vNode, xmlFragment) {
       xmlFragment.import(paragraphFragment);
       return;
     case 'figure':
-      if (vNodeHasChildren(vNode)) {
+      if (vNode.children) {
         // eslint-disable-next-line no-plusplus
         for (let index = 0; index < vNode.children.length; index++) {
           const childVNode = vNode.children[index];
-          if (childVNode.tagName === 'table') {
+          if (childVNode.name === 'table') {
             const tableFragment = await xmlBuilder.buildTable(
               childVNode,
               {
@@ -253,7 +239,7 @@ async function findXMLEquivalent(docxDocumentInstance, vNode, xmlFragment) {
             // Adding empty paragraph for space after table
             const emptyParagraphFragment = await xmlBuilder.buildParagraph(null, {});
             xmlFragment.import(emptyParagraphFragment);
-          } else if (childVNode.tagName === 'img') {
+          } else if (childVNode.name === 'img') {
             const imageFragment = await buildImage(docxDocumentInstance, childVNode);
             if (imageFragment) {
               xmlFragment.import(imageFragment);
@@ -293,7 +279,7 @@ async function findXMLEquivalent(docxDocumentInstance, vNode, xmlFragment) {
     case 'head':
       return;
   }
-  if (vNodeHasChildren(vNode)) {
+  if (vNode.children && vNode.children.length > 0) {
     // eslint-disable-next-line no-plusplus
     for (let index = 0; index < vNode.children.length; index++) {
       const childVNode = vNode.children[index];
@@ -305,27 +291,26 @@ async function findXMLEquivalent(docxDocumentInstance, vNode, xmlFragment) {
 
 // eslint-disable-next-line consistent-return
 export async function convertVTreeToXML(docxDocumentInstance, vTree, xmlFragment) {
-  if (!vTree) {
+  if (!vTree || vTree.type === 'directive') {
     // eslint-disable-next-line no-useless-return
     return '';
   }
-  if (Array.isArray(vTree) && vTree.length) {
-    // eslint-disable-next-line no-plusplus
-    for (let index = 0; index < vTree.length; index++) {
-      const vNode = vTree[index];
-      await convertVTreeToXML(docxDocumentInstance, vNode, xmlFragment);
-    }
-  } else if (isVNode(vTree)) {
+
+  if (vTree.type === 'tag') {
     await findXMLEquivalent(docxDocumentInstance, vTree, xmlFragment);
-  } else if (isVText(vTree)) {
+  } else if (vTree.type === 'text') {
     const paragraphFragment = await xmlBuilder.buildParagraph(vTree, {}, docxDocumentInstance);
     xmlFragment.import(paragraphFragment);
+  } else if (vTree.type === 'root' && vTree.children) {
+    for (let i = 0; i < vTree.children.length; i += 1) {
+      await convertVTreeToXML(docxDocumentInstance, vTree.children[i], xmlFragment);
+    }
   }
   return xmlFragment;
 }
 
 async function renderDocumentFile(docxDocumentInstance) {
-  const vTree = convertHTML(docxDocumentInstance.htmlString);
+  const vTree = htmlparser2.parseDocument(docxDocumentInstance.htmlString);
 
   const xmlFragment = fragment({ namespaceAlias: { w: namespaces.w } });
 

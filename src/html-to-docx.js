@@ -1,9 +1,5 @@
 import { create } from 'xmlbuilder2';
-import VNode from 'virtual-dom/vnode/vnode';
-import VText from 'virtual-dom/vnode/vtext';
-// eslint-disable-next-line import/no-named-default
-import { default as HTMLToVDOM } from 'html-to-vdom';
-import { decode } from 'html-entities';
+import * as htmlparser2 from 'htmlparser2';
 
 import { relsXML } from './schemas';
 import DocxDocument from './docx-document';
@@ -33,11 +29,6 @@ import {
   themeFolder,
   themeType,
 } from './constants';
-
-const convertHTML = HTMLToVDOM({
-  VNode,
-  VText,
-});
 
 const mergeOptions = (options, patch) => ({ ...options, ...patch });
 
@@ -127,11 +118,6 @@ async function addFilesToContainer(
     // eslint-disable-next-line no-param-reassign
     footerHTMLString = defaultHTMLString;
   }
-  if (documentOptions.decodeUnicode) {
-    headerHTMLString = decode(headerHTMLString); // eslint-disable-line no-param-reassign
-    htmlString = decode(htmlString); // eslint-disable-line no-param-reassign
-    footerHTMLString = decode(footerHTMLString); // eslint-disable-line no-param-reassign
-  }
 
   const docxDocument = new DocxDocument({ zip, htmlString, ...documentOptions });
   // Conversion to Word XML happens here
@@ -150,7 +136,7 @@ async function addFilesToContainer(
   });
 
   if (docxDocument.header && headerHTMLString) {
-    const vTree = convertHTML(headerHTMLString);
+    const vTree = htmlparser2.parseDocument(headerHTMLString);
 
     docxDocument.relationshipFilename = headerFileName;
     const { headerId, headerXML } = await docxDocument.generateHeaderXML(vTree);
@@ -171,7 +157,7 @@ async function addFilesToContainer(
     docxDocument.headerObjects.push({ headerId, relationshipId, type: docxDocument.headerType });
   }
   if (docxDocument.footer && footerHTMLString) {
-    const vTree = convertHTML(footerHTMLString);
+    const vTree = htmlparser2.parseDocument(footerHTMLString);
 
     docxDocument.relationshipFilename = footerFileName;
     const { footerId, footerXML } = await docxDocument.generateFooterXML(vTree);

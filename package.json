@@ -1,5 +1,5 @@
 {
-  "name": "html-to-docx",
+  "name": "html-to-docx-lite",
   "version": "1.8.0",
   "description": "HTML to DOCX converter",
   "keywords": [
@@ -10,24 +10,25 @@
     "office",
     "word"
   ],
-  "main": "dist/html-to-docx.umd.js",
-  "module": "dist/html-to-docx.esm.js",
+  "main": "dist/html-to-docx-lite.umd.js",
+  "module": "dist/html-to-docx-lite.mjs",
   "scripts": {
-    "test": "npm run build && node example/example-node.js",
-    "prerelease": "rollup -c",
+    "test": "npm run build && node example/example.js",
+    "prerelease": "vite build",
     "release": "standard-version",
     "lint": "eslint --fix .",
     "prettier:check": "prettier --check '**/*.{js}'",
     "validate": "run-s lint prettier:check",
-    "build": "rollup -c",
+    "build": "vite build",
     "prepare": "husky install"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/privateOmega/html-to-docx.git"
+    "url": "git+https://github.com/dobe-solutions/html-to-docx-lite.git"
   },
-  "author": "privateOmega <privateOmega@protonmail.com>",
+  "author": "Cruaier <thomas@dobe-solutions.vn>",
   "contributors": [
+    "privateOmega <privateOmega@protonmail.com>",
     "amrita-syn <amrita.yadav@synapsica.com>",
     "charuthaB <charutha.bhaskar@synapsica.com>",
     "hanagejet",
@@ -43,15 +44,12 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/privateOmega/html-to-docx/issues"
+    "url": "https://github.com/dobe-solutions/html-to-docx-lite/issues"
   },
-  "homepage": "https://github.com/privateOmega/html-to-docx#readme",
+  "homepage": "https://github.com/dobe-solutions/html-to-docx-lite#readme",
   "devDependencies": {
     "@commitlint/cli": "^13.1.0",
     "@commitlint/config-conventional": "^13.1.0",
-    "@rollup/plugin-commonjs": "^12.0.0",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^13.1.1",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-config-prettier": "^8.3.0",
@@ -60,25 +58,20 @@
     "husky": "^7.0.0",
     "lint-staged": "^11.1.2",
     "prettier": "^2.4.1",
-    "rollup": "^2.62.0",
-    "rollup-plugin-cleaner": "^1.0.0",
-    "rollup-plugin-node-builtins": "^2.1.2",
-    "rollup-plugin-terser": "^7.0.2",
-    "standard-version": "^9.3.1"
+    "standard-version": "^9.3.1",
+    "vite": "^5.0.11",
+    "vite-plugin-node-polyfills": "^0.19.0"
   },
   "dependencies": {
-    "@oozcitak/util": "8.3.4",
     "@oozcitak/dom": "1.15.6",
+    "@oozcitak/util": "8.3.4",
     "color-name": "^1.1.4",
-    "html-entities": "^2.3.3",
-    "html-to-vdom": "^0.7.0",
-    "image-size": "^1.0.0",
-    "image-to-base64": "^2.2.0",
-    "jszip": "^3.7.1",
-    "lodash": "^4.17.21",
+    "htmlparser2": "^9.0.0",
+    "image-size": "^1.1.1",
+    "jszip": "^3.10.1",
     "mime-types": "^2.1.35",
     "nanoid": "^3.1.25",
-    "virtual-dom": "^2.1.1",
+    "style-to-js": "^1.1.10",
     "xmlbuilder2": "2.1.2"
   },
   "lint-staged": {
