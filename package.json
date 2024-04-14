@@ -15,7 +15,7 @@
   "scripts": {
     "test": "npm run build && node example/example.js",
     "prerelease": "vite build",
-    "release": "release-it dry-run",
+    "release": "release-it",
     "lint": "eslint --fix .",
     "prettier:check": "prettier --check '**/*.{js}'",
     "validate": "run-s lint prettier:check",

@@ -131,7 +131,7 @@ Please make sure to branch new branches off of develop for contribution.
 
 MIT
 
-[npm-image]: https://img.shields.io/npm/v/html-to-docx.svg
+[npm-image]: https://img.shields.io/npm/v/html-to-docx-lite.svg
 [npm-url]: https://npmjs.org/package/html-to-docx-lite
 [html-to-docx]: https://github.com/privateOmega/html-to-docx
 [html-to-docx-readme]: https://github.com/privateOmega/html-to-docx/blob/master/README.md
